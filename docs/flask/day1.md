@@ -14,7 +14,7 @@ static_folder静态文件路径，static_url_path静态文件页面路径 /stati
 html 建议使用 < img src="{{url_for('static',filename='xx/xx/aa.jpg')}}">
 ## 2.添加配置文件
 #### 1.目录结构
-![](../../static/ml.png)
+![](https://my-blogxie.readthedocs.io/zh/latest/static/ml.png)
 #### 2.配置详情
 新建config文件夹，创建localsettings.py与settings.py  
 ##### localsettings.py用法：
