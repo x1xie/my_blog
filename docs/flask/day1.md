@@ -1,17 +1,74 @@
 # flask笔记
-
+补充装饰器相关：(运行结果： 1  0  )
+@functools.wraps装饰器可以防止调用同一个装饰器时同名报错，否则调用装饰器后函数名都为inner
+```python
+import functools
+def auth0(func):
+    print('0')
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        return func(*args, **kwargs)
+    return inner
+def auth1(func):
+    print('1')
+    @functools.wraps(func)
+    def inner(*args, **kwargs):
+        return func(*args, **kwargs)
+    return inner
+@auth0
+@auth1
+def index():
+    print('index')
+```
+对于flask使用装饰器时：
+```
+@app.route('/')
+@auth0
+```
+简介：包含Jinja2模板渲染 ；基于Werkzeug的wsgi实现网关
+```python
+from werkzeug.serving import run_simple
+from werkzeug.wrappers import Response
+def func(environ, start_response):
+    response = Response('hello world')
+    print('请求到来')
+    return response(environ, start_response)
+if __name__ == '__main__':
+    run_simple('127.0.0.1', 7000, func)
+```
 ## 1.flask基本使用
 ```angular2html
 from flask import Flask
 app = Flask(__name__, template_folder="templates", static_folder='static', static_url_path='/static')
-@app.route('/', methods=['GET', 'POST'])
+app.secret_key = 'sfddfffdh77789'
+@app.route('/', methods=['GET', 'POST'], strict_slashes=False)
 def index():
     return 'Hello World!'
 if __name__ == '__main__':
     app.run()
 ```
-static_folder静态文件路径，static_url_path静态文件页面路径 /static/aa.jpg ; 改动static_url_path='/yy'  /yy/aa.jpg
+- static_folder静态文件路径，static_url_path静态文件页面路径 /static/aa.jpg ; 改动static_url_path='/yy'  /yy/aa.jpg
 html 建议使用 < img src="{{url_for('static',filename='xx/xx/aa.jpg')}}">
+- strict_slashes 对url最后的/符合是否严格，默认为True，False为否
+#### session设置 （flask通过加密的方式把session存在cookie中）
+使用session时需要设置app.secret_key，否则会报错
+@app.route('index', endpoint='bm')endpoint为别名，url_for('bm')可以使用别名
+```
+# login中添加session
+session['username'] = 'xxxx'
+# 在使用时验证session 
+username = session.get('xxxx')
+if not username:
+    return redirect(url_for('login'))
+```
+#### 获取请求中的数据
+```
+# get请求
+id = request.args.get('id')
+# post请求
+user = request.form.get('user')
+```
+
 ## 2.添加配置文件
 #### 1.目录结构
 ![](https://my-blogxie.readthedocs.io/zh/latest/static/ml.png)
@@ -184,5 +241,67 @@ app.before_request(f1)
 def f10():
     print('f10')
 app.after_request(f10)
+```
+## 7蓝图(app.register_blueprint)
+### 7.1小蓝图
+构建业务功能可拆分的目录结构。  
+在项目pro_app1下创建view文件夹存放视图  
+访问时url为 xxxx/user/vshow
+#### 注册：
+```python
+from flask import Flask
+from .view.vtest1 import vtest1
+from .view.vtest2 import vtest2
+app = Flask(__name__)
+app.register_blueprint(vtest1,url_prefix='/user') #访问时添加前序
+app.register_blueprint(vtest2)
+```
+view文件夹中创建vtest1.py2,及vtest2.py   
+与vtest1.py为例：
+```python
+from flask import Blueprint
+vtest1 = Blueprint('vtest1', __name__, template_folder='templates')
+@vtest1.route('/vshow')
+def vshow():
+    return 'vshow'
+```
+### 7.2大蓝图
+
+
+# 8. flask 源码关于local的实现
+请求上下文管理   
+应用上下文管理
+```
+在flask中有个local类，他和threading.local的功能一样，为每个线程开辟空间
+进行存取数据，他们两个的内部实现机制，内部维护一个字典，以线程（协程）ID为key
+,进行数据隔离，如：
+__storage__={
+    1233:{'k1':123}
+}
+obj = Local()
+obj.k1 = 123
+在flask中还有一个LocalStack类，它内部会依赖local对象，local对象负责存储数据
+，对localstack对象用于将local中的值维护成一个栈。
+__storage__={
+    1233:{'stack':['k1',]}
+}
+obj = LocalStack()
+obj.push('k1')
+obj.top
+obj.pop()
+flask源码中总共有2个localstack对象
+__storage__={
+    1111:{'stack':[RequestContext(request.session),]}
+}
+_request_ctx_stack = LocalStack()
+
+__storage__={
+    1111:{'stack':[AppContext(app.g),]}
+}
+app_ctx_stack = LocalStack()
+_request_ctx_stack.push('xxx')
+app_ctx_stack.push('xxx')
+_request_ctx_stack   ---请求上下文管理
+app_ctx_stack        ---应用上下文管理
 ```
 
