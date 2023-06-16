@@ -250,3 +250,41 @@ def index():
 if __name__ == '__main__':
     app.run()
 ```
+# 5.flask-script组件
+pip下载
+```
+pip3 install flask-script
+```
+运用：
+```python
+from pro_app1 import create_app
+from flask_script import Manager
+
+app = create_app()
+manager = Manager(app)
+@Manager.command
+def custom(arg):
+    """
+    自定义命令
+    python manage.py custom 123
+    """
+    print (arg)
+@Manager.option('-n', '--name', dest='name')
+@Manager.option('-u', '--url', dest='url')
+def cmd(name,url):
+     """
+    自定义命令
+    python manage.py cmd -n testname -u http://www.baidu.com
+    :param name,url
+    :return
+    """
+     print(name,url)
+if __name__ == '__main__':
+    manager.run()
+```
+#### 其他
+```
+结合：flask-migrate / flask-sqlalchemy
+实现数据库迁移
+python manage.py migrate
+```

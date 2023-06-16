@@ -7,9 +7,10 @@ nav:
   - flask:
     - flask基础: flask/day1.md
     - flask进阶: flask/day2.md
-    - flask面试题: flask/day3.md
+    - flask部署: flask/day3.md
+    - flask面试题: flask/day4.md
   - django:
-    - day1: django/test.md
+    - django基础: django/day1.md
 
 markdown_extentions:
   - admonition

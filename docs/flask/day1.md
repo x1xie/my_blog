@@ -243,7 +243,7 @@ def f10():
 app.after_request(f10)
 ```
 ## 7蓝图(app.register_blueprint)
-### 7.1小蓝图
+### 7.1小蓝图(分功能蓝图)
 构建业务功能可拆分的目录结构。  
 在项目pro_app1下创建view文件夹存放视图  
 访问时url为 xxxx/user/vshow
@@ -265,9 +265,49 @@ vtest1 = Blueprint('vtest1', __name__, template_folder='templates')
 def vshow():
     return 'vshow'
 ```
-### 7.2大蓝图
+### 7.2大蓝图（分结构蓝图）
+- 补充 当bigblue目录下 和 bigblue/account/ 目录下同时出现templates，默认使用bigblue目录下templates的模板
+#### 目录结构
+![](https://my-blogxie.readthedocs.io/zh/latest/static/ml2.png)
+#### manage.py
+```python
+from bigblue import create_app
+app = create_app()
+if __name__ == '__main__':
+    app.run()
+```
+#### bigblue/account/__init__.py
+- from .views import forget 需要放在最后加载到内存， 否则会出现importerror;缺少from .views import forget则无法加载视图
+```python
+from flask import Blueprint
 
+account = Blueprint('account', __name__, template_folder='templates')
+from .views import forget
+```
+#### bigblue/account/views/forget.py
+```python
+from .. import account
+from flask import render_template
 
+@account.route('/')
+def login():
+    return render_template('login.html')
+```
+#### bigblue/__init__.py
+```python
+from flask import Flask
+
+def create_app():
+    app = Flask(__name__)
+    app.secret_key = app.config['SECRET_KEY']
+    # 加载配置文件
+    app.config.from_object('config.settings')
+    from .account import account
+    from .admin import admin
+    app.register_blueprint(account)
+    app.register_blueprint(admin)
+    return app
+```
 # 8. flask 源码关于local的实现
 请求上下文管理   
 应用上下文管理
